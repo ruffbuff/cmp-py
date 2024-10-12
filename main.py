@@ -22,7 +22,7 @@ def main_menu(stdscr):
 
         menu_options = [
             "Download: By link",
-            "Download: By URL search",
+            "Download: By search",
             "Check Tracks list",
             "Play Music",
             "Exit"
