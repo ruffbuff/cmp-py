@@ -4,7 +4,7 @@ import os
 import pygame
 from rich.console import Console
 from conf import APP_NAME, APP_VERSION, APP_DESCRIPTION
-from music_handler import list_music_files, play_music, search_youtube, download_music, draw_progress, search_soundcloud, download_soundcloud_track
+from cmp_handler import list_music_files, play_music, search_youtube, download_music, draw_progress, search_soundcloud, download_soundcloud_track
 
 console = Console()
 

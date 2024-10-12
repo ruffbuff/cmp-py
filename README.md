@@ -16,7 +16,7 @@ Developed by:
 ### Installation
 1: `git clone https://github.com/ruffbuff/cmp-py`<br/>
 2: `cd cmp-py`<br/>
-3: `touch .env`, then add `API_KEY=YOUR_API_KEY`, then go to `conf.py` and change `MUSIC_PATH` to yours.<br/>
+3: `touch .env`, then add `API_KEY=YOUR_API_KEY`, then go to `.config/cmp/conf.py` and change `MUSIC_PATH` to yours.<br/>
 4: `nano ~/.config/cmp/cmp.sh`<br/>
 5.0: Then add this bash script, and make it executable:<br/>
 ```bash
@@ -36,7 +36,7 @@ fi
 
 trap restore_padding EXIT
 
-python3 /path/to/your/clone/main.py
+python3 /home/ruffbuff/Dev/Scripts/Py/test/.config/cmp/cmp.py
 
 restore_padding
 ```
