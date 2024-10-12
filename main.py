@@ -37,7 +37,7 @@ def main_menu(stdscr):
         menu_options = [
             "Download: By Youtube URL",
             "Download: By Youtube search",
-            "Download: By SoundCloud search", # NOT WORKING!
+            "Download: By SoundCloud search",  # NOT WORKING!
             "Check Tracks list",
             "Play Music",
             "Exit"
@@ -65,125 +65,152 @@ def main_menu(stdscr):
                 stdscr.addstr(4, 5, "Enter YouTube's URL: ")
                 stdscr.refresh()
                 curses.echo()
-                
-                stdscr.addstr(6, 5, "")
+
                 stdscr.move(6, 5)
 
+                url = ""
                 while True:
-                    key = stdscr.getch()
-                    if key == 27:
+                    char = stdscr.getch()
+                    if char == 27:
                         break
+                    elif char == 10:
+                        break
+                    elif char == curses.KEY_BACKSPACE or char == 127:
+                        if url:
+                            url = url[:-1]
+                            stdscr.addstr(6, 5, url + ' ' * (100 - len(url)))
+                            stdscr.move(6, 5 + len(url))
+                    else:
+                        url += chr(char)
+                        stdscr.addstr(6, 5, url + ' ' * (100 - len(url)))
+                        stdscr.move(6, 5 + len(url))
 
-                    url = stdscr.getstr(6, 5).decode('utf-8').strip()
-                    result = download_music(url)
-                    stdscr.addstr(8, 5, result)
-                    stdscr.refresh()
-                    stdscr.getch()
-                    break
+                result = download_music(url)
+                stdscr.addstr(8, 5, result)
+                stdscr.refresh()
+                stdscr.getch()
+
             elif current_option == 1:
                 stdscr.addstr(2, 5, "'Esc' for exit.")
                 stdscr.addstr(4, 5, "Enter track name for search in YouTube: ")
                 stdscr.refresh()
                 curses.echo()
 
-                stdscr.addstr(6, 5, "")
                 stdscr.move(6, 5)
 
+                query = ""
                 while True:
-                    key = stdscr.getch()
-                    if key == 27:
+                    char = stdscr.getch()
+                    if char == 27:
                         break
-
-                    query = stdscr.getstr(6, 5).decode('utf-8').strip()
-                    search_result = search_youtube(query)
-
-                    if isinstance(search_result, tuple):
-                        table, results = search_result
-                        stdscr.clear()
-                        console.print(table)
-                        stdscr.addstr(len(results) + 5, 5, "Press 'Up'/'Down' for choice, 'Enter' for download: ")
-                        stdscr.refresh()
-
-                        choice = 0
-                        while True:
-                            stdscr.addstr(len(results) + 6, 5, f"Your track: {choice + 1}. {results[choice]['snippet']['title']}")
-                            key = stdscr.getch()
-                            if key == curses.KEY_UP and choice > 0:
-                                choice -= 1
-                                stdscr.clear()
-                            elif key == curses.KEY_DOWN and choice < len(results) - 1:
-                                choice += 1
-                                stdscr.clear()
-                            elif key in [curses.KEY_ENTER, 10, 13]:
-                                video_id = results[choice]['id']['videoId']
-                                download_result = download_music(f"https://www.youtube.com/watch?v={video_id}")
-                                stdscr.addstr(len(results) + 11, 5, download_result)
-                                stdscr.refresh()
-                                stdscr.getch()
-                                break
-                            elif key == 27:
-                                break
+                    elif char == 10:
+                        break
+                    elif char == curses.KEY_BACKSPACE or char == 127:
+                        if query:
+                            query = query[:-1]
+                            stdscr.addstr(6, 5, query + ' ' * (100 - len(query)))
+                            stdscr.move(6, 5 + len(query))
                     else:
-                        stdscr.addstr(8, 5, search_result)
+                        query += chr(char)
+                        stdscr.addstr(6, 5, query + ' ' * (100 - len(query)))
+                        stdscr.move(6, 5 + len(query))
 
+                search_result = search_youtube(query)
+
+                if isinstance(search_result, tuple):
+                    table, results = search_result
+                    stdscr.clear()
+                    console.print(table)
+                    stdscr.addstr(len(results) + 5, 5, "Press 'Up'/'Down' for choice, 'Enter' for download: ")
+                    stdscr.refresh()
+
+                    choice = 0
+                    while True:
+                        stdscr.addstr(len(results) + 6, 5, f"Your track: {choice + 1}. {results[choice]['snippet']['title']}")
+                        key = stdscr.getch()
+                        if key == curses.KEY_UP and choice > 0:
+                            choice -= 1
+                            stdscr.clear()
+                        elif key == curses.KEY_DOWN and choice < len(results) - 1:
+                            choice += 1
+                            stdscr.clear()
+                        elif key in [curses.KEY_ENTER, 10, 13]:
+                            video_id = results[choice]['id']['videoId']
+                            download_result = download_music(f"https://www.youtube.com/watch?v={video_id}")
+                            stdscr.addstr(len(results) + 11, 5, download_result)
+                            stdscr.refresh()
+                            stdscr.getch()
+                            break
+                        elif key == 27:
+                            break
+                else:
+                    stdscr.addstr(8, 5, search_result)
                     stdscr.refresh()
                     stdscr.getch()
-                    break
+
             elif current_option == 2:
                 stdscr.addstr(2, 5, "'Esc' for exit.")
                 stdscr.addstr(4, 5, "Enter track name for search in SoundCloud: ")
                 stdscr.refresh()
                 curses.echo()
 
-                stdscr.addstr(6, 5, "")
                 stdscr.move(6, 5)
 
+                query = ""
                 while True:
-                    key = stdscr.getch()
-                    if key == 27:
+                    char = stdscr.getch()
+                    if char == 27:
                         break
-
-                    query = stdscr.getstr(6, 5).decode('utf-8').strip()
-                    search_result = search_soundcloud(query)
-
-                    if isinstance(search_result, tuple):
-                        table, results = search_result
-                        stdscr.clear()
-                        console.print(table)
-                        stdscr.addstr(len(results) + 5, 5, "Press 'Up'/'Down' for choice, 'Enter' for download: ")
-                        stdscr.refresh()
-
-                        choice = 0
-                        while True:
-                            stdscr.addstr(len(results) + 6, 5, f"Your track: {choice + 1}. {results[choice]}")
-                            key = stdscr.getch()
-                            if key == curses.KEY_UP and choice > 0:
-                                choice -= 1
-                                stdscr.clear()
-                            elif key == curses.KEY_DOWN and choice < len(results) - 1:
-                                choice += 1
-                                stdscr.clear()
-                            elif key in [curses.KEY_ENTER, 10, 13]:
-                                download_result = download_soundcloud_track(results[choice])
-                                stdscr.addstr(len(results) + 11, 5, download_result)
-                                stdscr.refresh()
-                                stdscr.getch()
-                                break
-                            elif key == 27:
-                                break
+                    elif char == 10:
+                        break
+                    elif char == curses.KEY_BACKSPACE or char == 127:
+                        if query:
+                            query = query[:-1]
+                            stdscr.addstr(6, 5, query + ' ' * (100 - len(query)))
+                            stdscr.move(6, 5 + len(query))
                     else:
-                        stdscr.addstr(8, 5, search_result)
+                        query += chr(char)
+                        stdscr.addstr(6, 5, query + ' ' * (100 - len(query)))
+                        stdscr.move(6, 5 + len(query))
 
+                search_result = search_soundcloud(query)
+
+                if isinstance(search_result, tuple):
+                    table, results = search_result
+                    stdscr.clear()
+                    console.print(table)
+                    stdscr.addstr(len(results) + 5, 5, "Press 'Up'/'Down' for choice, 'Enter' for download: ")
                     stdscr.refresh()
-                    stdscr.getch()
-                    break
+
+                    choice = 0
+                    while True:
+                        stdscr.addstr(len(results) + 6, 5, f"Your track: {choice + 1}. {results[choice]}")
+                        key = stdscr.getch()
+                        if key == curses.KEY_UP and choice > 0:
+                            choice -= 1
+                            stdscr.clear()
+                        elif key == curses.KEY_DOWN and choice < len(results) - 1:
+                            choice += 1
+                            stdscr.clear()
+                        elif key in [curses.KEY_ENTER, 10, 13]:
+                            download_result = download_soundcloud_track(results[choice])
+                            stdscr.addstr(len(results) + 11, 5, download_result)
+                            stdscr.refresh()
+                            stdscr.getch()
+                            break
+                        elif key == 27:
+                            break
+                else:
+                    stdscr.addstr(8, 5, search_result)
+                stdscr.refresh()
+                stdscr.getch()
             elif current_option == 3:
                 music_files = list_music_files()
                 stdscr.addstr(2, 5, "'Esc' for exit.")
                 stdscr.addstr(4, 5, "Your Audiofiles: ")
                 if music_files:
                     for i, file in enumerate(music_files, 1):
-                        stdscr.addstr(5 + i, 5, f"{i}. {file}")
+                        stdscr.addstr(5 + i, 5, f"{i}. {file.ljust(30)}")
                 else:
                     stdscr.addstr(6, 5, "Music not found.")
                 stdscr.refresh()
