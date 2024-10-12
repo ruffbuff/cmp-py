@@ -8,5 +8,5 @@ API_KEY = os.getenv("API_KEY")
 
 MUSIC_PATH = "/home/ruffbuff/Music"
 APP_NAME = "cmp-py"
-APP_VERSION = "v1.7.2"
+APP_VERSION = "v1.7.3"
 APP_DESCRIPTION = "A simple command line music player."
