@@ -4,7 +4,7 @@ import os
 import pygame
 from rich.console import Console
 from conf import APP_NAME, APP_VERSION, APP_DESCRIPTION
-from music_handler import list_music_files, play_music, search_youtube, download_music, draw_progress
+from music_handler import list_music_files, play_music, search_youtube, download_music, draw_progress, search_soundcloud, download_soundcloud_track
 
 console = Console()
 
@@ -23,7 +23,7 @@ class Logger:
 
 def main_menu(stdscr):
     curses.start_color()
-    curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(1, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
     current_option = 0
@@ -35,8 +35,9 @@ def main_menu(stdscr):
         stdscr.addstr(2, 5, "----- Command Music Player: -----", curses.A_BOLD)
 
         menu_options = [
-            "Download: By link",
-            "Download: By search",
+            "Download: By Youtube URL",
+            "Download: By Youtube search",
+            "Download: By SoundCloud search", # NOT WORKING!
             "Check Tracks list",
             "Play Music",
             "Exit"
@@ -64,6 +65,9 @@ def main_menu(stdscr):
                 stdscr.addstr(4, 5, "Enter YouTube's URL: ")
                 stdscr.refresh()
                 curses.echo()
+                
+                stdscr.addstr(6, 5, "")
+                stdscr.move(6, 5)
 
                 while True:
                     key = stdscr.getch()
@@ -76,12 +80,14 @@ def main_menu(stdscr):
                     stdscr.refresh()
                     stdscr.getch()
                     break
-
             elif current_option == 1:
                 stdscr.addstr(2, 5, "'Esc' for exit.")
                 stdscr.addstr(4, 5, "Enter track name for search in YouTube: ")
                 stdscr.refresh()
                 curses.echo()
+
+                stdscr.addstr(6, 5, "")
+                stdscr.move(6, 5)
 
                 while True:
                     key = stdscr.getch()
@@ -123,8 +129,55 @@ def main_menu(stdscr):
                     stdscr.refresh()
                     stdscr.getch()
                     break
-
             elif current_option == 2:
+                stdscr.addstr(2, 5, "'Esc' for exit.")
+                stdscr.addstr(4, 5, "Enter track name for search in SoundCloud: ")
+                stdscr.refresh()
+                curses.echo()
+
+                stdscr.addstr(6, 5, "")
+                stdscr.move(6, 5)
+
+                while True:
+                    key = stdscr.getch()
+                    if key == 27:
+                        break
+
+                    query = stdscr.getstr(6, 5).decode('utf-8').strip()
+                    search_result = search_soundcloud(query)
+
+                    if isinstance(search_result, tuple):
+                        table, results = search_result
+                        stdscr.clear()
+                        console.print(table)
+                        stdscr.addstr(len(results) + 5, 5, "Press 'Up'/'Down' for choice, 'Enter' for download: ")
+                        stdscr.refresh()
+
+                        choice = 0
+                        while True:
+                            stdscr.addstr(len(results) + 6, 5, f"Your track: {choice + 1}. {results[choice]}")
+                            key = stdscr.getch()
+                            if key == curses.KEY_UP and choice > 0:
+                                choice -= 1
+                                stdscr.clear()
+                            elif key == curses.KEY_DOWN and choice < len(results) - 1:
+                                choice += 1
+                                stdscr.clear()
+                            elif key in [curses.KEY_ENTER, 10, 13]:
+                                download_result = download_soundcloud_track(results[choice])
+                                stdscr.addstr(len(results) + 11, 5, download_result)
+                                stdscr.refresh()
+                                stdscr.getch()
+                                break
+                            elif key == 27:
+                                break
+                    else:
+                        stdscr.addstr(8, 5, search_result)
+
+                    stdscr.refresh()
+                    stdscr.getch()
+                    break
+            elif current_option == 3:
                 music_files = list_music_files()
                 stdscr.addstr(2, 5, "'Esc' for exit.")
                 stdscr.addstr(4, 5, "Your Audiofiles: ")
@@ -135,10 +188,9 @@ def main_menu(stdscr):
                     stdscr.addstr(6, 5, "Music not found.")
                 stdscr.refresh()
                 stdscr.getch()
-
-            elif current_option == 3:
-                play_music_menu(stdscr, logger)
             elif current_option == 4:
+                play_music_menu(stdscr, logger)
+            elif current_option == 5:
                 break
 
 def play_music_menu(stdscr, logger):

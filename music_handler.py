@@ -3,6 +3,8 @@ import os
 import pygame
 import yt_dlp
 import googleapiclient.discovery
+import requests
+from bs4 import BeautifulSoup
 from rich.table import Table
 from conf import API_KEY, MUSIC_PATH
 
@@ -67,7 +69,7 @@ def play_music(file_name):
     pygame.mixer.init()
     pygame.mixer.music.load(file_path)
     pygame.mixer.music.play()
-    
+
     return file_path
 
 def draw_progress(progress_win, position, total_length, music_files):
@@ -79,3 +81,66 @@ def draw_progress(progress_win, position, total_length, music_files):
     progress_win.clear()
     progress_win.addstr(1, 1, f"Track: [{bar}] {position // 1000} sec from {total_length // 1000} sec")
     progress_win.refresh()
+
+# ///-------------\\\
+# ||| NOT WORKING |||
+# \\\-------------/// 
+def search_soundcloud(query):
+    search_url = f"https://soundcloud.com/search?q={query}"
+    response = requests.get(search_url)
+
+    if response.status_code != 200:
+        return "Error fetching data from SoundCloud."
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    tracks = soup.find_all('li', class_='soundList__item')
+
+    if not tracks:
+        return "No tracks found."
+
+    table = Table(title="SoundCloud Search Results", show_header=True, header_style="bold magenta")
+    table.add_column("№", style="cyan", justify="right")
+    table.add_column("Track Name", style="magenta")
+    table.add_column("Download Link", style="blue")
+
+    track_links = []
+    for i, track in enumerate(tracks, 1):
+        title_tag = track.find('a', class_='soundTitle__title')
+        if title_tag:
+            title = title_tag.get_text(strip=True)
+            link = title_tag['href']
+            download_link = f"https://soundcloud.com{link}/download"
+            table.add_row(str(i), title, download_link)
+            track_links.append(link)
+
+    return table, track_links
+
+# ///-------------\\\
+# ||| NOT WORKING |||
+# \\\-------------/// 
+def download_soundcloud_track(track_link):
+    try:
+        track_page_url = f"https://soundcloud.com{track_link}"
+        response = requests.get(track_page_url)
+
+        if response.status_code != 200:
+            return "Error fetching track page."
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        download_button = soup.find('a', class_='sc-button-download')
+        if download_button and 'href' in download_button.attrs:
+            download_url = download_button['href']
+
+            track_name = track_link.split('/')[-1]
+            track_file_path = os.path.join(MUSIC_DIR, f"{track_name}.mp3")
+
+            track_response = requests.get(download_url, allow_redirects=True)
+            with open(track_file_path, 'wb') as track_file:
+                track_file.write(track_response.content)
+
+            return "Track downloaded successfully!"
+        else:
+            return "Download link not found."
+    except Exception as e:
+        return f"Error downloading track: {str(e)}"
