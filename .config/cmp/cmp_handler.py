@@ -58,9 +58,16 @@ def download_music(url):
     except Exception as e:
         return f"Error with load: {str(e)}"
 
-def list_music_files():
-    files = [f for f in os.listdir(MUSIC_DIR) if f.endswith(".mp3")]
-    return files
+def list_music_files(directory=MUSIC_PATH):
+    music_files = []
+    total_size = 0
+    for filename in os.listdir(directory):
+        if filename.endswith(('.mp3', '.wav', '.ogg')):
+            full_path = os.path.join(directory, filename)
+            music_files.append(full_path)
+            total_size += os.path.getsize(full_path)
+
+    return music_files, total_size
 
 def play_music(file_name):
     file_path = os.path.join(MUSIC_DIR, file_name)

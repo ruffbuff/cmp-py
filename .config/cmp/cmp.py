@@ -3,7 +3,7 @@ import curses
 import os
 import pygame
 from rich.console import Console
-from conf import APP_NAME, APP_VERSION, APP_DESCRIPTION
+from conf import APP_NAME, APP_VERSION, APP_DESCRIPTION, MUSIC_PATH
 from cmp_handler import list_music_files, play_music, search_youtube, download_music, draw_progress, search_soundcloud, download_soundcloud_track
 
 console = Console()
@@ -205,12 +205,16 @@ def main_menu(stdscr):
                 stdscr.refresh()
                 stdscr.getch()
             elif current_option == 3:
-                music_files = list_music_files()
-                stdscr.addstr(2, 5, "'Esc' for exit.")
-                stdscr.addstr(4, 5, "Your Audiofiles: ")
+                music_files, total_size = list_music_files()
+                stdscr.addstr(3, 5, "'Esc' for exit.")
+                stdscr.addstr(5, 5, "Your Audiofiles: ")
+
                 if music_files:
+                    total_size_mb = total_size / (1024 * 1024)
+                    stdscr.addstr(4, 5, f"Total size: {total_size_mb:.2f} MB")
+
                     for i, file in enumerate(music_files, 1):
-                        stdscr.addstr(5 + i, 5, f"{i}. {file.ljust(30)}")
+                        stdscr.addstr(6 + i, 5, f"{i}. {file.ljust(30)}")
                 else:
                     stdscr.addstr(6, 5, "Music not found.")
                 stdscr.refresh()
@@ -221,7 +225,7 @@ def main_menu(stdscr):
                 break
 
 def play_music_menu(stdscr, logger):
-    music_files = list_music_files()
+    music_files, total_size = list_music_files(MUSIC_PATH)
     max_tracks_displayed = 30
     if music_files:
         max_y, max_x = stdscr.getmaxyx()
@@ -234,16 +238,17 @@ def play_music_menu(stdscr, logger):
         menu_win = curses.newwin(menu_height, max_x, 5, 5)
         log_win = curses.newwin(log_height, max_x - 10, 5 + menu_height, 5)
         progress_win = curses.newwin(progress_height, max_x - 10, 5 + menu_height + log_height, 5)
-        track_info_win = curses.newwin(track_info_height, max_x, 0, 5)
 
         log_win.border()
         log_win.addstr(1, 1, "Logs window", curses.A_BOLD)
         log_win.refresh()
 
-        stdscr.addstr(2, 5, "Press:")
-        stdscr.addstr(3, 5, "'Up'/'Down' for choice, 'Enter' to select, 'Esc' to exit.")
-        stdscr.addstr(4, 5, "'P' for Pause/Continue, 'F' for Force-Stop.")
+        stdscr.addstr(2, 5, "Press: 'Up'/'Down' for choice, 'Enter' to select, 'Esc' to exit.")
+        stdscr.addstr(3, 5, "'P' for Pause/Continue, 'F' for Force-Stop.")
         stdscr.refresh()
+
+        total_size_mb = total_size / (1024 * 1024)
+        stdscr.addstr(4, 5, f"Total size: {total_size_mb:.2f} MB")
 
         choice = 0
         current_track_index = 0
@@ -256,10 +261,11 @@ def play_music_menu(stdscr, logger):
             menu_win.border()
 
             for i in range(offset, min(offset + max_tracks_displayed, len(music_files))):
+                track_name = os.path.basename(music_files[i])
                 if i == choice:
-                    menu_win.addstr(1 + (i - offset), 1, f"> {music_files[i]}", curses.A_BOLD | curses.color_pair(2))
+                    menu_win.addstr(1 + (i - offset), 1, f"> {track_name}", curses.A_BOLD | curses.color_pair(2))
                 else:
-                    menu_win.addstr(1 + (i - offset), 1, f"  {music_files[i]}")
+                    menu_win.addstr(1 + (i - offset), 1, f"  {track_name}")
 
             menu_win.refresh()
             key = stdscr.getch()
@@ -279,10 +285,7 @@ def play_music_menu(stdscr, logger):
                 if file_path:
                     is_playing = True
                     is_paused = False
-                    track_info_win.clear()
-                    track_info_win.addstr(0, 1, f"Playing: {music_files[current_track_index]}", curses.A_BOLD)
-                    track_info_win.refresh()
-                    logger.add_log(f"Playing: {music_files[current_track_index]}")
+                    logger.add_log(f"Playing: {os.path.basename(music_files[current_track_index])}")
                     update_log_window(log_win, logger)
                     stdscr.refresh()
 
