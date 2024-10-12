@@ -9,7 +9,10 @@ Developed by:
 ▐█•█▌▐█▄█▌██▌.██▌ .██▄▪▐█ ▐█▄█▌██▌.██▌.
 .▀  ▀ ▀▀▀ ▀▀▀ ▀▀▀  ·▀▀▀▀   ▀▀▀ ▀▀▀ ▀▀▀ 
 ```
-
+![Sneak-peek0](images/image0.png)<br/>
+![Sneak-peek1](images/image1.png)<br/>
+![Sneak-peek2](images/image2.png)<br/>
+![Sneak-peek3](images/image3.png)<br/>
 ### Installation
 1: `git clone https://github.com/ruffbuff/cmp-py`<br/>
 2: `cd cmp-py`<br/>
