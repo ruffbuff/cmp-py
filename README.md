@@ -13,7 +13,7 @@ Developed by:
 ### Installation
 1: `git clone https://github.com/ruffbuff/cmp-py`<br/>
 2: `cd cmp-py`<br/>
-3: Create `.env` and add `API_KEY=YOUR_API_KEY` and go to `conf.py` change `MUSIC_PATH` to yours.<br/>
+3: `touch .env`, then add `API_KEY=YOUR_API_KEY`, then go to `conf.py` and change `MUSIC_PATH` to yours.<br/>
 4: `nano ~/.config/cmp/cmp.sh`<br/>
 5.0: Then add this bash script, and make it executable:<br/>
 ```bash

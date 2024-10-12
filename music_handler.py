@@ -62,7 +62,7 @@ def list_music_files():
 
 def play_music(file_name):
     file_path = os.path.join(MUSIC_DIR, file_name)
-    if not os.path.exists(file_path) or os.path.getsize(file_path) < 1000:  # Проверка файла
+    if not os.path.exists(file_path) or os.path.getsize(file_path) < 1000:
         return None
     pygame.mixer.init()
     pygame.mixer.music.load(file_path)
@@ -70,9 +70,12 @@ def play_music(file_name):
     
     return file_path
 
-def draw_progress(stdscr, position, total_length, music_files):
+def draw_progress(progress_win, position, total_length, music_files):
     progress_bar_length = 40
     progress_ratio = position / total_length if total_length > 0 else 0
     filled_length = int(progress_bar_length * progress_ratio)
     bar = '█' * filled_length + '-' * (progress_bar_length - filled_length)
-    stdscr.addstr(len(music_files) + 15, 5, f"Track: [{bar}] {position // 1000} sec from {total_length // 1000} sec")
+
+    progress_win.clear()
+    progress_win.addstr(1, 1, f"Track: [{bar}] {position // 1000} sec from {total_length // 1000} sec")
+    progress_win.refresh()
