@@ -21,7 +21,7 @@ Developed by:
 <br/>
 5: `nano ~/.config/cmp/cmp.sh`
 <br/>
-6: Then add this bash script, and make it executable:
+6.0: Then add this bash script, and make it executable:
 <br/>
 
 ```bash
@@ -45,14 +45,13 @@ python3 /path/to/your/clone/main.py
 
 restore_padding
 ```
+
+6.1: `chmod +x ~/.config/cmp/cmp.sh`
 <br/>
-`chmod +x ~/.config/cmp/cmp.sh`
-<br/>
-7: Last thing: `cd` to your terminal framework config like `~/.zshrc` for `zsh`, and find lines with `Helpful aliases`,
+7: Last thing: `cd` to your terminal framework config like `~/.zshrc` for `zsh`, and find lines with `Helpful aliases`,<br/>
 add `alias cmp='~/.config/cmp/cmp.sh'`, then `ctrl+o` + `Enter` to save, and `ctrl+x` to exit.
 <br/>
 8: Start your terminal and write `cmp`
-<br/>
 
 ## License
 **[CC-BY-SA-4.0](LICENSE)**
