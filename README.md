@@ -16,7 +16,7 @@ Developed by:
 ### Installation
 1: `git clone https://github.com/ruffbuff/cmp-py`<br/>
 2: `cd cmp-py`<br/>
-3: `pip install requirements.txt`
+3: `pip install requirements.txt`<br/>
 4: `touch .env`, add `API_KEY=YOUR_API_KEY`, then go to `.config/cmp/conf.py` change `MUSIC_PATH` to yours.<br/>
 5: `nano ~/.config/cmp/cmp.sh`<br/>
 6.0: Then add this **[cmp.sh](.config/cmp/cmp.sh)** bash script, and make it executable.<br/>
