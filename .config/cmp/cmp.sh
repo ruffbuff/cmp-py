@@ -14,6 +14,6 @@ fi
 
 trap restore_padding EXIT
 
-python3 /path/to/your/clone/main.py
+python3 /path/to/your/clone/.config/cmp/cmp.py
 
 restore_padding
