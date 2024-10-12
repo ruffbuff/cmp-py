@@ -1,0 +1,5 @@
+API_KEY = "YOUR_API_KEY_HERE"
+MUSIC_PATH = "/path/to/your/music"
+APP_NAME = "CMP - Command Music Player"
+APP_VERSION = "v1.0.0"
+APP_DESCRIPTION = "A simple command line music player."
