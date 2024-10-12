@@ -1,0 +1,50 @@
+# CMP - Command Music Player
+A simple command line music player
+
+Developed by:
+```shell
+▄▄▄  ▄• ▄▌·▄▄▄·▄▄▄ ▄▄▄▄·  ▄• ▄▌·▄▄▄·▄▄▄
+▀▄ █·█▪██▌▐▄▄·▐▄▄· ▐█ ▀█▪ █▪██▌▐▄▄·▐▄▄·
+▐▀▀▄ █▌▐█▌██▪ ██▪  ▐█▀▀█▄ █▌▐█▌██▪ ██▪ 
+▐█•█▌▐█▄█▌██▌.██▌ .██▄▪▐█ ▐█▄█▌██▌.██▌.
+.▀  ▀ ▀▀▀ ▀▀▀ ▀▀▀  ·▀▀▀▀   ▀▀▀ ▀▀▀ ▀▀▀ 
+```
+
+## Installation
+1: `git clone https://github.com/ruffbuff/cmp-py`
+2: `cd cmp-py`
+3: `mv ~/path/to/your/clone/conf_example.py ~/path/to/your/clone/conf.py`
+4: Go to `conf.py` and change API_KEY & MUSIC_PATH to your own.
+5: `nano ~/.config/cmp/cmp.sh`
+6: Then add this bash script, and make it executable:
+```bash
+#!/bin/bash
+
+source /path/to/your/clone/.venv/bin/activate
+
+restore_padding() {
+  if [[ -n "$KITTY_PID" ]]; then
+    kitty @ set-spacing padding=default
+  fi
+}
+
+if [[ -n "$KITTY_PID" ]]; then
+  kitty @ set-spacing padding=0
+fi
+
+trap restore_padding EXIT
+
+python3 /path/to/your/clone/main.py
+
+restore_padding
+```
+`chmod +x ~/.config/cmp/cmp.sh`
+7: Last thing: `cd` to your terminal framework config like `~/.zshrc` for `zsh`, and find lines with `Helpful aliases`,
+add `alias cmp='~/.config/cmp/cmp.sh'`, then `ctrl+o` + `Enter` to save, and `ctrl+x` to exit.
+8: Start your terminal and write `cmp`
+
+## License
+**[CC-BY-SA-4.0](LICENSE)**
+<br/>
+
+[Link](https://choosealicense.com/licenses/cc-by-sa-4.0/#)
