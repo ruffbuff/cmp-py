@@ -1,90 +1,12 @@
-import os
-import sys
-import pygame
+# main.py
 import curses
-import yt_dlp
-import googleapiclient.discovery
+import os
+import pygame
 from rich.console import Console
-from rich.table import Table
-
-try:
-    from conf import API_KEY, MUSIC_PATH, APP_NAME, APP_VERSION, APP_DESCRIPTION
-except ImportError:
-    print("Error: file conf.py not found!")
-    sys.exit(1)
-
-MUSIC_DIR = MUSIC_PATH
-YOUTUBE_API_SERVICE_NAME = "youtube"
-YOUTUBE_API_VERSION = "v3"
-
-if not os.path.exists(MUSIC_DIR):
-    os.makedirs(MUSIC_DIR)
+from conf import APP_NAME, APP_VERSION, APP_DESCRIPTION
+from music_handler import list_music_files, play_music, search_youtube, download_music, draw_progress
 
 console = Console()
-
-def search_youtube(query):
-    youtube = googleapiclient.discovery.build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=API_KEY)
-    request = youtube.search().list(
-        part="snippet",
-        maxResults=5,
-        q=query,
-        type="video"
-    )
-    response = request.execute()
-
-    results = response.get("items", [])
-    if not results:
-        return "We did not found any thing."
-
-    table = Table(title="Search results", show_header=True, header_style="bold magenta")
-    table.add_column("№", style="cyan", justify="right")
-    table.add_column("Name", style="magenta")
-
-    for i, result in enumerate(results, 1):
-        title = result['snippet']['title']
-        video_id = result['id']['videoId']
-        table.add_row(str(i), f"{title} (https://www.youtube.com/watch?v={video_id})")
-
-    return table, results
-
-def download_music(url):
-    try:
-        print(f"Загружаем: {url}")
-        
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': f'{MUSIC_DIR}/%(title)s.%(ext)s',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-
-        return "Music loaded sucessfully!"
-    except Exception as e:
-        return f"Error with load: {str(e)}"
-
-def list_music_files():
-    files = [f for f in os.listdir(MUSIC_DIR) if f.endswith(".mp3")]
-    return files
-
-def play_music(file_name):
-    file_path = os.path.join(MUSIC_DIR, file_name)
-    pygame.mixer.init()
-    pygame.mixer.music.load(file_path)
-    pygame.mixer.music.play()
-    
-    return file_path
-
-def draw_progress(stdscr, position, total_length, music_files):
-    progress_bar_length = 40
-    progress_ratio = position / total_length if total_length > 0 else 0
-    filled_length = int(progress_bar_length * progress_ratio)
-    bar = '█' * filled_length + '-' * (progress_bar_length - filled_length)
-    stdscr.addstr(len(music_files) + 15, 5, f"Track: [{bar}] {position // 1000} sec from {total_length // 1000} sec")
 
 def main_menu(stdscr):
     curses.start_color()
@@ -96,23 +18,23 @@ def main_menu(stdscr):
     while True:
         stdscr.clear()
         stdscr.bkgd(' ', curses.color_pair(1))
-        stdscr.addstr(4, 5, "----- Command Music Player: -----", curses.A_BOLD)
+        stdscr.addstr(2, 5, "----- Command Music Player: -----", curses.A_BOLD)
 
         menu_options = [
-            "Download Music: By link",
-            "Search and download: Youtube",
-            "Check tracks list",
+            "Download: By link",
+            "Download: By URL search",
+            "Check Tracks list",
             "Play Music",
             "Exit"
         ]
 
-        stdscr.addstr(12, 5, "----- ---------- ---------- -----", curses.A_BOLD)
+        stdscr.addstr(10, 5, "----- ---------- ---------- -----", curses.A_BOLD)
 
         for idx, option in enumerate(menu_options):
             if idx == current_option:
-                stdscr.addstr(5 + idx + 1, 5, f"> {option}", curses.A_BOLD | curses.color_pair(2))
+                stdscr.addstr(3 + idx + 1, 5, f"> {option}", curses.A_BOLD | curses.color_pair(2))
             else:
-                stdscr.addstr(5 + idx + 1, 5, f"  {option}")
+                stdscr.addstr(3 + idx + 1, 5, f"  {option}")
 
         stdscr.refresh()
         key = stdscr.getch()
@@ -124,119 +46,184 @@ def main_menu(stdscr):
         elif key in [curses.KEY_ENTER, 10, 13]:
             stdscr.clear()
             if current_option == 0:
-                stdscr.addstr(5, 5, "Enter Youtube's URL: ")
+                stdscr.addstr(2, 5, "'Esc' for exit.")
+                stdscr.addstr(3, 5, "Enter YouTube's URL: ")
                 stdscr.refresh()
                 curses.echo()
-                url = stdscr.getstr(6, 5).decode('utf-8').strip()
-                result = download_music(url)
-                stdscr.addstr(8, 5, result)
-                stdscr.refresh()
-                stdscr.getch()
-            elif current_option == 1:
-                stdscr.addstr(5, 5, "Enter track name for serach in YouTube: ")
-                stdscr.refresh()
-                curses.echo()
-                query = stdscr.getstr(6, 5).decode('utf-8').strip()
-                search_result = search_youtube(query)
 
-                if isinstance(search_result, tuple):
-                    table, results = search_result
-                    stdscr.clear()
-                    console.print(table)
-                    stdscr.addstr(len(results) + 8, 5, "Press 'Up'/'Down' for choise, 'Enter' for download: ")
+                while True:
+                    key = stdscr.getch()
+                    if key == 27:
+                        break
+
+                    url = stdscr.getstr(4, 5).decode('utf-8').strip()
+                    result = download_music(url)
+                    stdscr.addstr(6, 5, result)
                     stdscr.refresh()
+                    stdscr.getch()
+                    break
 
-                    choice = 0
-                    while True:
-                        stdscr.addstr(len(results) + 9, 5, f"Your track: {choice + 1}. {results[choice]['snippet']['title']}")
-                        key = stdscr.getch()
-                        if key == curses.KEY_UP and choice > 0:
-                            choice -= 1
-                        elif key == curses.KEY_DOWN and choice < len(results) - 1:
-                            choice += 1
-                        elif key in [curses.KEY_ENTER, 10, 13]:
-                            video_id = results[choice]['id']['videoId']
-                            download_result = download_music(f"https://www.youtube.com/watch?v={video_id}")
-                            stdscr.addstr(len(results) + 11, 5, download_result)
-                            stdscr.refresh()
-                            stdscr.getch()
-                            break
-                else:
-                    stdscr.addstr(8, 5, search_result)
-
+            elif current_option == 1:
+                stdscr.addstr(2, 5, "'Esc' for exit.")
+                stdscr.addstr(3, 5, "Enter track name for search in YouTube: ")
                 stdscr.refresh()
-                stdscr.getch()
+                curses.echo()
+
+                while True:
+                    key = stdscr.getch()
+                    if key == 27:
+                        break
+
+                    query = stdscr.getstr(4, 5).decode('utf-8').strip()
+                    search_result = search_youtube(query)
+
+                    if isinstance(search_result, tuple):
+                        table, results = search_result
+                        stdscr.clear()
+                        console.print(table)
+                        stdscr.addstr(len(results) + 5, 5, "Press 'Up'/'Down' for choice, 'Enter' for download: ")
+                        stdscr.refresh()
+
+                        choice = 0
+                        while True:
+                            stdscr.addstr(len(results) + 6, 5, f"Your track: {choice + 1}. {results[choice]['snippet']['title']}")
+                            key = stdscr.getch()
+                            if key == curses.KEY_UP and choice > 0:
+                                choice -= 1
+                                stdscr.clear()
+                            elif key == curses.KEY_DOWN and choice < len(results) - 1:
+                                choice += 1
+                                stdscr.clear()
+                            elif key in [curses.KEY_ENTER, 10, 13]:
+                                video_id = results[choice]['id']['videoId']
+                                download_result = download_music(f"https://www.youtube.com/watch?v={video_id}")
+                                stdscr.addstr(len(results) + 11, 5, download_result)
+                                stdscr.refresh()
+                                stdscr.getch()
+                                break
+                            elif key == 27:
+                                break
+                    else:
+                        stdscr.addstr(8, 5, search_result)
+
+                    stdscr.refresh()
+                    stdscr.getch()
+                    break
+
             elif current_option == 2:
                 music_files = list_music_files()
-                stdscr.addstr(5, 5, "Your Audiofiles:")
+                stdscr.addstr(2, 5, "'Esc' for exit.")
+                stdscr.addstr(3, 5, "Your Audiofiles: ")
                 if music_files:
                     for i, file in enumerate(music_files, 1):
-                        stdscr.addstr(6 + i, 5, f"{i}. {file}")
+                        stdscr.addstr(3 + i, 5, f"{i}. {file}")
                 else:
-                    stdscr.addstr(7, 5, "Music not found.")
+                    stdscr.addstr(4, 5, "Music not found.")
                 stdscr.refresh()
                 stdscr.getch()
-            elif current_option == 3:
-                music_files = list_music_files()
-                if music_files:
-                    stdscr.addstr(5, 5, "Enter number for play (ESC for Exit):")
-                    choice = 0
-                    is_playing = False
-                    while True:
-                        for i, file in enumerate(music_files):
-                            if i == choice:
-                                stdscr.addstr(6 + i, 5, f"> {file}", curses.A_BOLD | curses.color_pair(2))
-                            else:
-                                stdscr.addstr(6 + i, 5, f"  {file}")
 
-                        stdscr.addstr(len(music_files) + 12, 5, "Press 'P' for Pause, 'S' for Stop.")
+            elif current_option == 3:
+                play_music_menu(stdscr)
+            elif current_option == 4:
+                break
+
+def play_music_menu(stdscr):
+    music_files = list_music_files()
+    if music_files:
+        max_y, max_x = stdscr.getmaxyx()
+        log_win = curses.newwin(10, max_x - 10, max_y - 11, 5)
+        menu_win = curses.newwin(max_y - 12, max_x, 5, 5)
+        
+        log_win.border()
+        log_win.addstr(1, 1, "Logs window", curses.A_BOLD)
+        log_win.refresh()
+
+        stdscr.addstr(2, 5, "Press:")
+        stdscr.addstr(3, 5, "'Up'/'Down' for choice, 'Enter' to select, 'Esc' to exit.")
+        stdscr.addstr(4, 5, "'P' for Pause/Continue, 'F' for Force-Stop, 'N' for next, 'B' for back.")
+        stdscr.refresh()
+
+        choice = 0
+        is_playing = False
+        is_paused = False
+        current_track_index = 0
+
+        while True:
+            menu_win.clear()
+            for i, file in enumerate(music_files):
+                if i == choice:
+                    menu_win.addstr(1 + i, 1, f"> {file}", curses.A_BOLD | curses.color_pair(2))
+                else:
+                    menu_win.addstr(1 + i, 1, f"  {file}")
+            menu_win.refresh()
+
+            key = stdscr.getch()
+
+            if key == curses.KEY_UP and choice > 0:
+                choice -= 1
+            elif key == curses.KEY_DOWN and choice < len(music_files) - 1:
+                choice += 1
+            elif key in [curses.KEY_ENTER, 10, 13]:
+                current_track_index = choice
+                file_path = play_music(music_files[current_track_index])
+
+                if file_path:
+                    is_playing = True
+                    is_paused = False
+                    log_win.addstr(2, 1, f"Playing: {music_files[current_track_index]}")
+                    log_win.refresh()
+                    stdscr.refresh()
+
+                    while is_playing:
+                        position = pygame.mixer.music.get_pos()
+                        total_length = pygame.mixer.Sound(file_path).get_length() * 1000
+
+                        draw_progress(stdscr, position, total_length, music_files)
                         stdscr.refresh()
                         key = stdscr.getch()
 
-                        if key == curses.KEY_UP and choice > 0:
-                            choice -= 1
-                        elif key == curses.KEY_DOWN and choice < len(music_files) - 1:
-                            choice += 1
-                        elif key in [curses.KEY_ENTER, 10, 13]:
-                            current_track_index = choice
+                        if key == ord('p'):
+                            if is_paused:
+                                pygame.mixer.music.unpause()
+                                is_paused = False
+                                log_win.addstr(3, 1, "Resumed")
+                            else:
+                                pygame.mixer.music.pause()
+                                is_paused = True
+                                log_win.addstr(3, 1, "Paused")
+                            log_win.refresh()
+
+                        elif key == ord('f'):
+                            pygame.mixer.music.stop()
+                            log_win.addstr(3, 1, "Stopped")
+                            log_win.refresh()
+                            is_playing = False
+
+                        elif key == ord('n'):
+                            current_track_index += 1
+                            if current_track_index >= len(music_files):
+                                current_track_index = 0
                             file_path = play_music(music_files[current_track_index])
-                            is_playing = True
-                            stdscr.addstr(len(music_files) + 14, 5, f"Right now playing: {music_files[current_track_index]}")
-                            stdscr.refresh()
+                            log_win.addstr(2, 1, f"Playing: {music_files[current_track_index]}     ")
+                            log_win.refresh()
 
-                            while is_playing:
-                                position = pygame.mixer.music.get_pos()
-                                total_length = pygame.mixer.Sound(file_path).get_length() * 1000
-                                draw_progress(stdscr, position, total_length, music_files)
+                        elif key == ord('b'):
+                            current_track_index -= 1
+                            if current_track_index < 0:
+                                current_track_index = len(music_files) - 1
+                            file_path = play_music(music_files[current_track_index])
+                            log_win.addstr(2, 1, f"Playing: {music_files[current_track_index]}     ")
+                            log_win.refresh()
 
-                                stdscr.refresh()
+                        if not pygame.mixer.music.get_busy() and not is_paused:
+                            current_track_index += 1
+                            if current_track_index >= len(music_files):
+                                current_track_index = 0
+                            file_path = play_music(music_files[current_track_index])
+                            log_win.addstr(2, 1, f"Playing: {music_files[current_track_index]}     ")
+                            log_win.refresh()
 
-                                if not pygame.mixer.music.get_busy():
-                                    is_playing = False
-                                    break
-
-                                key = stdscr.getch()
-                                if key == ord('p'):
-                                    pygame.mixer.music.pause()
-                                    stdscr.addstr(len(music_files) + 15, 5, "Track Paused, Press 'P' to Continue.")
-                                    stdscr.refresh()
-                                    while True:
-                                        key = stdscr.getch()
-                                        if key == ord('p'):
-                                            pygame.mixer.music.unpause()
-                                            stdscr.addstr(len(music_files) + 15, 5, f"Right now playing: {music_files[current_track_index]}                      ")
-                                            stdscr.refresh()
-                                            break
-                                elif key == ord('s'):
-                                    pygame.mixer.music.stop()
-                                    is_playing = False
-                                    stdscr.addstr(len(music_files) + 16, 5, "Track Paused, Press any button to Continue.")
-                                    stdscr.refresh()
-                                    stdscr.getch()
-                                    break
-                        elif key == 27:
-                            break
-            elif current_option == 4:
+            elif key == 27:
                 break
 
 if __name__ == "__main__":
