@@ -1,4 +1,4 @@
-# conf.py
+# .config/cmp/conf.py
 import os
 from dotenv import load_dotenv
 
@@ -8,5 +8,5 @@ API_KEY = os.getenv("API_KEY")
 
 MUSIC_PATH = "/home/ruffbuff/Music"
 APP_NAME = "cmp-py"
-APP_VERSION = "v1.8.1"
+APP_VERSION = "v1.9.0"
 APP_DESCRIPTION = "A simple command line music player."

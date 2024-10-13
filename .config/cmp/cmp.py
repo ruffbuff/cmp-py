@@ -1,7 +1,9 @@
-# main.py
+# .config/cmp/cmp.py
 import curses
 import os
 import pygame
+import time
+import threading
 from rich.console import Console
 from conf import APP_NAME, APP_VERSION, APP_DESCRIPTION, MUSIC_PATH
 from cmp_handler import list_music_files, play_music, search_youtube, download_music, draw_progress, search_soundcloud, download_soundcloud_track
@@ -59,13 +61,12 @@ def main_menu(stdscr):
         elif key == curses.KEY_DOWN and current_option < len(menu_options) - 1:
             current_option += 1
         elif key in [curses.KEY_ENTER, 10, 13]:
-            stdscr.clear()
+            stdscr.clear()  # Clear before displaying a new menu
             if current_option == 0:
                 stdscr.addstr(2, 5, "'Esc' for exit.")
                 stdscr.addstr(4, 5, "Enter YouTube's URL: ")
                 stdscr.refresh()
                 curses.echo()
-
                 stdscr.move(6, 5)
 
                 url = ""
@@ -75,7 +76,7 @@ def main_menu(stdscr):
                         break
                     elif char == 10:
                         break
-                    elif char == curses.KEY_BACKSPACE or char == 127:
+                    elif char in (curses.KEY_BACKSPACE, 127):
                         if url:
                             url = url[:-1]
                             stdscr.addstr(6, 5, url + ' ' * (100 - len(url)))
@@ -95,7 +96,6 @@ def main_menu(stdscr):
                 stdscr.addstr(4, 5, "Enter track name for search in YouTube: ")
                 stdscr.refresh()
                 curses.echo()
-
                 stdscr.move(6, 5)
 
                 query = ""
@@ -105,7 +105,7 @@ def main_menu(stdscr):
                         break
                     elif char == 10:
                         break
-                    elif char == curses.KEY_BACKSPACE or char == 127:
+                    elif char in (curses.KEY_BACKSPACE, 127):
                         if query:
                             query = query[:-1]
                             stdscr.addstr(6, 5, query + ' ' * (100 - len(query)))
@@ -130,10 +130,8 @@ def main_menu(stdscr):
                         key = stdscr.getch()
                         if key == curses.KEY_UP and choice > 0:
                             choice -= 1
-                            stdscr.clear()
                         elif key == curses.KEY_DOWN and choice < len(results) - 1:
                             choice += 1
-                            stdscr.clear()
                         elif key in [curses.KEY_ENTER, 10, 13]:
                             video_id = results[choice]['id']['videoId']
                             download_result = download_music(f"https://www.youtube.com/watch?v={video_id}")
@@ -153,7 +151,6 @@ def main_menu(stdscr):
                 stdscr.addstr(4, 5, "Enter track name for search in SoundCloud: ")
                 stdscr.refresh()
                 curses.echo()
-
                 stdscr.move(6, 5)
 
                 query = ""
@@ -163,7 +160,7 @@ def main_menu(stdscr):
                         break
                     elif char == 10:
                         break
-                    elif char == curses.KEY_BACKSPACE or char == 127:
+                    elif char in (curses.KEY_BACKSPACE, 127):
                         if query:
                             query = query[:-1]
                             stdscr.addstr(6, 5, query + ' ' * (100 - len(query)))
@@ -188,10 +185,8 @@ def main_menu(stdscr):
                         key = stdscr.getch()
                         if key == curses.KEY_UP and choice > 0:
                             choice -= 1
-                            stdscr.clear()
                         elif key == curses.KEY_DOWN and choice < len(results) - 1:
                             choice += 1
-                            stdscr.clear()
                         elif key in [curses.KEY_ENTER, 10, 13]:
                             download_result = download_soundcloud_track(results[choice])
                             stdscr.addstr(len(results) + 11, 5, download_result)
@@ -223,6 +218,20 @@ def main_menu(stdscr):
                 play_music_menu(stdscr, logger)
             elif current_option == 5:
                 break
+
+def update_progress(progress_win, file_path, music_files, logger, is_paused_event, stop_event):
+    """Функция для обновления прогресса в отдельном потоке."""
+    total_length = pygame.mixer.Sound(file_path).get_length() * 1000
+
+    while not stop_event.is_set():
+        if not is_paused_event.is_set() and pygame.mixer.music.get_busy():
+            position = pygame.mixer.music.get_pos()
+            draw_progress(progress_win, position, total_length, music_files)
+        time.sleep(1)
+
+    logger.add_log("Track finished.")
+    progress_win.clear()
+    progress_win.refresh()
 
 def play_music_menu(stdscr, logger):
     music_files, total_size = list_music_files(MUSIC_PATH)
@@ -256,6 +265,12 @@ def play_music_menu(stdscr, logger):
         is_paused = False
         offset = 0
 
+        stdscr.nodelay(False)
+        is_paused_event = threading.Event()
+        stop_event = threading.Event()
+
+        curses.curs_set(0)
+
         while True:
             menu_win.clear()
             menu_win.border()
@@ -268,6 +283,7 @@ def play_music_menu(stdscr, logger):
                     menu_win.addstr(1 + (i - offset), 1, f"  {track_name}")
 
             menu_win.refresh()
+
             key = stdscr.getch()
 
             if key == curses.KEY_UP and choice > 0:
@@ -285,42 +301,49 @@ def play_music_menu(stdscr, logger):
                 if file_path:
                     is_playing = True
                     is_paused = False
+                    is_paused_event.clear()
+                    stop_event.clear()
                     logger.add_log(f"Playing: {os.path.basename(music_files[current_track_index])}")
                     update_log_window(log_win, logger)
                     stdscr.refresh()
 
-                    while is_playing:
-                        position = pygame.mixer.music.get_pos()
-                        total_length = pygame.mixer.Sound(file_path).get_length() * 1000
+                    curses.curs_set(0)
+                    progress_thread = threading.Thread(target=update_progress, args=(progress_win, file_path, music_files, logger, is_paused_event, stop_event))
+                    progress_thread.start()
 
-                        draw_progress(progress_win, position, total_length, music_files)
-                        progress_win.refresh()
-                        key = stdscr.getch()
+            elif key == ord('p'):
+                if is_playing:
+                    if is_paused:
+                        pygame.mixer.music.unpause()
+                        is_paused = False
+                        is_paused_event.clear()
+                        logger.add_log("Resumed")
+                    else:
+                        pygame.mixer.music.pause()
+                        is_paused = True
+                        is_paused_event.set()
+                        logger.add_log("Paused")
+                    update_log_window(log_win, logger)
 
-                        if key == ord('p'):
-                            if is_paused:
-                                pygame.mixer.music.unpause()
-                                is_paused = False
-                                logger.add_log("Resumed")
-                            else:
-                                pygame.mixer.music.pause()
-                                is_paused = True
-                                logger.add_log("Paused")
-                            update_log_window(log_win, logger)
-
-                        elif key == ord('f'):
-                            if is_playing:
-                                pygame.mixer.music.stop()
-                                logger.add_log("Stopped, select another track.")
-                                update_log_window(log_win, logger)
-                                is_playing = False
-                                is_paused = False
-
-                        if not pygame.mixer.music.get_busy() and not is_paused:
-                            is_playing = False
+            elif key == ord('f'):
+                if is_playing:
+                    pygame.mixer.music.stop()
+                    stop_event.set()
+                    logger.add_log("Stopped, select another track.")
+                    update_log_window(log_win, logger)
+                    is_playing = False
+                    is_paused = False
+                    is_paused_event.clear()
 
             elif key == 27:
+                if is_playing:
+                    stop_event.set()
                 break
+
+            time.sleep(0.1)
+
+        stdscr.clear()
+        stdscr.refresh()
 
 def update_log_window(log_win, logger):
     log_win.clear()

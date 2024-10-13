@@ -1,4 +1,4 @@
-# music_handler.py
+# .config/cmp/cmp_handler.py
 import os
 import pygame
 import yt_dlp
