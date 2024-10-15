@@ -24,6 +24,8 @@ Developed by:
 6.1: `chmod +x ~/.config/cmp/cmp.sh`<br/>
 7: Last thing: `cd` to your terminal framework config like `~/.zshrc` for `zsh`,<br/> and find lines with `Helpful aliases`,<br/> add `alias cmp='~/.config/cmp/cmp.sh'`, then `ctrl+o` + `Enter` to save, and `ctrl+x` to exit.<br/>
 8: Start your terminal and write `cmp`<br/>
+### Contribution
+**[ruffbuff](https://github.com/ruffbuff)**<br/>
 ### License
 **[CC-BY-SA-4.0](LICENSE)**<br/>
 [Link](https://choosealicense.com/licenses/cc-by-sa-4.0/#)
